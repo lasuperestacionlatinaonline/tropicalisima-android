@@ -42,8 +42,9 @@ public final class MainActivity extends Activity {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private FrameLayout root;
     private ThemeManager.Season season;
-    private TextView status,playAction,volumeLabel;
+    private TextView status,volumeLabel;
     private GlowPlay glowPlay;
+    private LogoAura logoAura;
     private Equalizer equalizer;
     private SeekBar volume;
     private MediaController controller;
@@ -83,14 +84,14 @@ public final class MainActivity extends Activity {
             catch(Exception e){Toast.makeText(this,"No se pudo iniciar el reproductor. Revisa la conexión.",Toast.LENGTH_LONG).show();}
         },command->runOnUiThread(command));
     }
-    // Pantalla principal compacta: la radio y sus acciones ocupan el primer plano.
-    // Se conserva desplazamiento en móviles pequeños y con tamaños de letra accesibles.
+    // V1.3 RC — Portada compacta: LOGO + UN ÚNICO PLAY + VOLUMEN + PARTICIPA.
+    // La portada no introduce controles redundantes ni modifica el servicio de audio.
+    // En pantallas pequeñas o con tipografía ampliada se permite scroll por accesibilidad.
     private LinearLayout compactContent(){
         ScrollView sc=new ScrollView(this);
         sc.setFillViewport(true);sc.setVerticalScrollBarEnabled(false);
         LinearLayout col=Ui.column(this);
-        // Reserva una zona inferior para que el boton flotante no tape controles.
-        col.setPadding(Ui.dp(this,15),Ui.dp(this,8),Ui.dp(this,15),Ui.dp(this,82));
+        col.setPadding(Ui.dp(this,15),Ui.dp(this,5),Ui.dp(this,15),Ui.dp(this,86));
         sc.addView(col,new ScrollView.LayoutParams(-1,-2));
         root.addView(sc,new FrameLayout.LayoutParams(-1,-1));
         return col;
@@ -99,51 +100,66 @@ public final class MainActivity extends Activity {
         root=Ui.frame(this,season.accent);setContentView(root);
         LinearLayout col=compactContent();
         final int screenDp=getResources().getConfiguration().screenHeightDp;
-        final boolean small=screenDp<740;
-        TextView header=Ui.text(this,"●  TROPICALISIMA ESTÉREO  ·  EN VIVO",13,Ui.GOLD,true);
-        header.setGravity(Gravity.CENTER);Ui.add(col,header,0);
+        final boolean small=screenDp<690;
+        final int heroHeight=Math.min(262,Math.max(157,Math.round(screenDp*.295f)));
+
+        // El logotipo original es la pieza central de la portada.
+        // Su halo se dibuja DETRÁS de la imagen sin alterar la marca.
+        FrameLayout hero=new FrameLayout(this);
+        LinearLayout.LayoutParams heroP=new LinearLayout.LayoutParams(-1,Ui.dp(this,heroHeight));
+        heroP.topMargin=Ui.dp(this,small?0:3);
+        col.addView(hero,heroP);
+        logoAura=new LogoAura(this,season.accent,season.second);
+        hero.addView(logoAura,new FrameLayout.LayoutParams(-1,-1));
         ImageView logo=new ImageView(this);
         logo.setImageResource(R.drawable.logo_original);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         logo.setContentDescription("TROPICALISIMA ESTÉREO. La que te pone a gozar.");
-        LinearLayout.LayoutParams imgP=new LinearLayout.LayoutParams(-1,Ui.dp(this,small?104:135));
-        imgP.topMargin=Ui.dp(this,2);
-        col.addView(logo,imgP);
-        LinearLayout playerCard=Ui.card(this);
-        playerCard.setPadding(Ui.dp(this,14),Ui.dp(this,11),Ui.dp(this,14),Ui.dp(this,13));
-        Ui.add(col,playerCard,6);
-        status=Ui.text(this,"LISTA PARA ESCUCHAR",16,Ui.WHITE,true);
-        status.setGravity(Gravity.CENTER);
-        Ui.add(playerCard,status,0);
-        glowPlay=new GlowPlay(this,season.accent,season.second);
-        int playSize=small?104:128;
-        LinearLayout.LayoutParams playP=new LinearLayout.LayoutParams(Ui.dp(this,playSize),Ui.dp(this,playSize));
-        playP.gravity=Gravity.CENTER;playP.topMargin=Ui.dp(this,5);
-        playerCard.addView(glowPlay,playP);
-        glowPlay.setContentDescription("Reproducir la emisora");
-        glowPlay.setOnClickListener(v->togglePlayback());
-        playAction=Ui.action(this,"▶  ESCUCHAR EN VIVO",Ui.PINK,Ui.ORANGE,this::togglePlayback);
-        playAction.setMinHeight(Ui.dp(this,50));
-        playAction.setPadding(Ui.dp(this,10),Ui.dp(this,10),Ui.dp(this,10),Ui.dp(this,10));
-        Ui.add(playerCard,playAction,3);
-        equalizer=new Equalizer(this);
-        LinearLayout.LayoutParams eqp=new LinearLayout.LayoutParams(-1,Ui.dp(this,small?16:23));
-        eqp.topMargin=Ui.dp(this,8);playerCard.addView(equalizer,eqp);
+        FrameLayout.LayoutParams logoP=new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER);
+        logoP.setMargins(Ui.dp(this,10),0,Ui.dp(this,10),0);
+        hero.addView(logo,logoP);
 
-        LinearLayout volHeader=Ui.row(this);Ui.add(playerCard,volHeader,6);
-        TextView volTitle=Ui.text(this,"VOLUMEN",14,Ui.WHITE,true);
+        LinearLayout playerCard=Ui.card(this);
+        playerCard.setBackground(Ui.solid(this,0xff11142d,24,season.accent));
+        playerCard.setElevation(Ui.dp(this,3));
+        playerCard.setPadding(Ui.dp(this,13),Ui.dp(this,11),Ui.dp(this,13),Ui.dp(this,12));
+        Ui.add(col,playerCard,small?0:4);
+        status=Ui.text(this,"●  EN VIVO · TOCA PLAY",17,Ui.WHITE,true);
+        status.setGravity(Gravity.CENTER);
+        status.setContentDescription("Estado de la radio");
+        Ui.add(playerCard,status,0);
+
+        // Botón único central: el círculo ES el control de reproducción.
+        glowPlay=new GlowPlay(this,season.accent,season.second);
+        int playSize=Math.min(151,Math.max(106,Math.round(screenDp*.164f)));
+        LinearLayout.LayoutParams playP=new LinearLayout.LayoutParams(Ui.dp(this,playSize),Ui.dp(this,playSize));
+        playP.gravity=Gravity.CENTER;
+        playP.topMargin=Ui.dp(this,small?2:5);
+        playerCard.addView(glowPlay,playP);
+        glowPlay.setContentDescription("Escuchar la radio en vivo");
+        glowPlay.setOnClickListener(v->togglePlayback());
+
+        equalizer=new Equalizer(this);
+        LinearLayout.LayoutParams eqp=new LinearLayout.LayoutParams(-1,Ui.dp(this,small?16:22));
+        eqp.topMargin=Ui.dp(this,small?1:7);
+        playerCard.addView(equalizer,eqp);
+
+        LinearLayout volHeader=Ui.row(this);Ui.add(playerCard,volHeader,small?3:6);
+        TextView volTitle=Ui.text(this,"VOLUMEN",15,Ui.WHITE,true);
         volHeader.addView(volTitle,new LinearLayout.LayoutParams(0,-2,1));
-        volumeLabel=Ui.text(this,"50 %",15,Ui.GOLD,true);
+        volumeLabel=Ui.text(this,"50 %",17,Ui.GOLD,true);
         volHeader.addView(volumeLabel,new LinearLayout.LayoutParams(-2,-2));
         LinearLayout volRow=Ui.row(this);Ui.add(playerCard,volRow,2);
-        TextView minus=volumeButton("−");volRow.addView(minus,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
+        TextView minus=volumeButton("−");
+        volRow.addView(minus,new LinearLayout.LayoutParams(Ui.dp(this,50),Ui.dp(this,50)));
         volume=new SeekBar(this);volume.setMax(100);volume.setProgress(50);
         volume.setContentDescription("Ajustar volumen de la emisora");
         volume.setProgressTintList(ColorStateList.valueOf(Ui.CYAN));
         volume.setThumbTintList(ColorStateList.valueOf(Ui.GOLD));
         volume.setProgressBackgroundTintList(ColorStateList.valueOf(0xff4b4764));
-        volRow.addView(volume,new LinearLayout.LayoutParams(0,Ui.dp(this,48),1));
-        TextView plus=volumeButton("+");volRow.addView(plus,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
+        volRow.addView(volume,new LinearLayout.LayoutParams(0,Ui.dp(this,50),1));
+        TextView plus=volumeButton("+");
+        volRow.addView(plus,new LinearLayout.LayoutParams(Ui.dp(this,50),Ui.dp(this,50)));
         minus.setOnClickListener(v->adjustVolume(-10));plus.setOnClickListener(v->adjustVolume(10));
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             @Override public void onProgressChanged(SeekBar b,int p,boolean user){if(user)applyVolume(p);}
@@ -151,8 +167,7 @@ public final class MainActivity extends Activity {
             @Override public void onStopTrackingTouch(SeekBar b){changingVolume=false;refreshPlayback();}
         });
 
-        // Un solo acceso protagonista. El FAB queda fuera del ScrollView:
-        // permanece visible sin multiplicar botones ni interrumpir la radio.
+        // Un acceso flotante independiente: SALUDO, CANCIÓN, WHATSAPP y COMPARTIR.
         addParticipaButton();
     }
     private TextView volumeButton(String label){
@@ -249,11 +264,11 @@ public final class MainActivity extends Activity {
         boolean ready=controller!=null,shouldPlay=ready&&controller.getPlayWhenReady();
         boolean playing=ready&&controller.isPlaying();
         boolean buffering=shouldPlay&&!playing;
-        status.setText(ready?(playing?"●  AL AIRE · SONANDO":buffering?"◌  CONECTANDO LA SEÑAL…":"LISTA PARA ESCUCHAR"):
+        status.setText(ready?(playing?"●  REPRODUCIENDO EN VIVO":buffering?"◌  CONECTANDO LA SEÑAL…":"●  EN VIVO · TOCA PLAY"):
                 "PREPARANDO REPRODUCTOR…");
         status.setTextColor(playing?Ui.CYAN:Ui.WHITE);
-        playAction.setText(shouldPlay?"Ⅱ  PAUSAR RADIO":"▶  ESCUCHAR EN VIVO");
         glowPlay.setPlaying(shouldPlay);equalizer.setPlaying(playing);
+        if(logoAura!=null)logoAura.setPlaying(playing);
         glowPlay.setContentDescription(shouldPlay?"Pausar la radio":"Escuchar la radio en vivo");
         if(ready&&!changingVolume){int v=Math.round(controller.getVolume()*100);volume.setProgress(v);volumeLabel.setText(v+" %");}
     }
@@ -352,6 +367,51 @@ public final class MainActivity extends Activity {
                 float r=Ui.dp(getContext(),1.3f)+(j%3)*.8f;
                 c.drawCircle(x,y,r,p);
             }
+        }
+    }
+    /** Resplandor original alrededor del logotipo. No modifica el PNG oficial.
+     *  El movimiento es lento, no se activa si Android reduce las animaciones.
+     */
+    static class LogoAura extends View {
+        private final Paint p=new Paint(3);
+        private final int accent,second;
+        private boolean playing=false;
+        LogoAura(Activity a,int aColor,int bColor){
+            super(a);accent=aColor;second=bColor;
+            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+        void setPlaying(boolean value){playing=value;invalidate();}
+        @Override protected void onDraw(Canvas c){
+            super.onDraw(c);
+            float w=getWidth(),h=getHeight(),cx=w*.5f,cy=h*.51f;
+            float r=Math.min(w*.36f,h*.46f);
+            p.setStyle(Paint.Style.FILL);
+            p.setShader(new RadialGradient(cx,cy,r*1.45f,
+                new int[]{(accent&0x00ffffff)|0x55000000,0x241b1452,0x00091020},
+                null,Shader.TileMode.CLAMP));
+            c.drawCircle(cx,cy,r*1.45f,p);p.setShader(null);
+            // Aro de neón suave con una rotación lenta cuando la radio está sonando.
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Ui.dp(getContext(),2.5f));
+            p.setShader(new SweepGradient(cx,cy,new int[]{accent,Ui.CYAN,second,Ui.PINK,accent},null));
+            c.save();
+            if(playing&&ValueAnimator.areAnimatorsEnabled()){
+                float deg=(SystemClock.uptimeMillis()%18000L)*360f/18000f;
+                c.rotate(deg,cx,cy);
+            }
+            c.drawCircle(cx,cy,r,p);
+            c.restore();p.setShader(null);
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Ui.dp(getContext(),1));
+            p.setColor((second&0x00ffffff)|0x55000000);
+            c.drawCircle(cx,cy,r*1.10f,p);
+            p.setStyle(Paint.Style.FILL);
+            for(int i=0;i<12;i++){
+                float a=(float)(Math.PI*2*i/12);
+                float dotX=cx+(float)Math.cos(a)*r*1.16f;
+                float dotY=cy+(float)Math.sin(a)*r*1.16f;
+                p.setColor(((i%3==0?Ui.ORANGE:i%2==0?Ui.CYAN:Ui.PINK)&0x00ffffff)|0x90000000);
+                c.drawCircle(dotX,dotY,Ui.dp(getContext(),i%3==0?1.8f:1.1f),p);
+            }
+            if(playing&&ValueAnimator.areAnimatorsEnabled())postInvalidateDelayed(120);
         }
     }
     static class GlowPlay extends View {
