@@ -1,5 +1,5 @@
 
-name: Compilar APK Android
+name: Compilar APK Android (pruebas)
 
 on:
   workflow_dispatch:
@@ -31,7 +31,9 @@ jobs:
           java-version: '17'
 
       - name: Preparar SDK Android
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Instalar plataforma Android 36
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
@@ -44,9 +46,9 @@ jobs:
       - name: Compilar APK debug
         run: gradle :app:assembleDebug --stacktrace --no-daemon
 
-      - name: Guardar APK
+      - name: Guardar APK de PRUEBAS
         uses: actions/upload-artifact@v4
         with:
-          name: TROPICALISIMA-ESTEREO-V1
+          name: TROPICALISIMA-ESTEREO-V1-PRUEBAS
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
