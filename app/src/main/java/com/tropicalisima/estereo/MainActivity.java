@@ -1,16 +1,20 @@
 package com.tropicalisima.estereo;
 
 import android.animation.ValueAnimator;
+import android.app.Dialog;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,13 +22,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
-import android.widget.Switch;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.media3.common.Player;
@@ -36,7 +42,7 @@ public final class MainActivity extends Activity {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private FrameLayout root;
     private ThemeManager.Season season;
-    private TextView status,playAction,volumeLabel,seasonLabel;
+    private TextView status,playAction,volumeLabel;
     private GlowPlay glowPlay;
     private Equalizer equalizer;
     private SeekBar volume;
@@ -77,78 +83,77 @@ public final class MainActivity extends Activity {
             catch(Exception e){Toast.makeText(this,"No se pudo iniciar el reproductor. Revisa la conexión.",Toast.LENGTH_LONG).show();}
         },command->runOnUiThread(command));
     }
+    // Pantalla principal compacta: la radio y sus acciones ocupan el primer plano.
+    // Se conserva desplazamiento en móviles pequeños y con tamaños de letra accesibles.
+    private LinearLayout compactContent(){
+        ScrollView sc=new ScrollView(this);
+        sc.setFillViewport(true);sc.setVerticalScrollBarEnabled(false);
+        LinearLayout col=Ui.column(this);
+        // Reserva una zona inferior para que el boton flotante no tape controles.
+        col.setPadding(Ui.dp(this,15),Ui.dp(this,8),Ui.dp(this,15),Ui.dp(this,82));
+        sc.addView(col,new ScrollView.LayoutParams(-1,-2));
+        root.addView(sc,new FrameLayout.LayoutParams(-1,-1));
+        return col;
+    }
     private void buildScreen(){
         root=Ui.frame(this,season.accent);setContentView(root);
-        LinearLayout col=Ui.scrollContent(this,root);
-        TextView header=Ui.text(this,"●  RADIO EN VIVO  ●",14,Ui.GOLD,true);
-        header.setGravity(Gravity.CENTER);Ui.add(col,header,6);
-        ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.logo_original);
-        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);logo.setContentDescription("Logotipo oficial TROPICALISIMA ESTÉREO");
-        LinearLayout.LayoutParams imgP=new LinearLayout.LayoutParams(-1,Ui.dp(this,235));imgP.topMargin=Ui.dp(this,10);
+        LinearLayout col=compactContent();
+        final int screenDp=getResources().getConfiguration().screenHeightDp;
+        final boolean small=screenDp<740;
+        TextView header=Ui.text(this,"●  TROPICALISIMA ESTÉREO  ·  EN VIVO",13,Ui.GOLD,true);
+        header.setGravity(Gravity.CENTER);Ui.add(col,header,0);
+        ImageView logo=new ImageView(this);
+        logo.setImageResource(R.drawable.logo_original);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        logo.setContentDescription("TROPICALISIMA ESTÉREO. La que te pone a gozar.");
+        LinearLayout.LayoutParams imgP=new LinearLayout.LayoutParams(-1,Ui.dp(this,small?104:135));
+        imgP.topMargin=Ui.dp(this,2);
         col.addView(logo,imgP);
-        Ui.add(col,Ui.heading(this,"LA QUE TE PONE A GOZAR"),0);
-        seasonLabel=Ui.subtitle(this,"✦  "+season.name+"  ✦");seasonLabel.setTextColor(season.accent);
-        Ui.add(col,seasonLabel,7);
-
-        LinearLayout playerCard=Ui.card(this);Ui.add(col,playerCard,18);
-        status=Ui.text(this,"LISTA PARA ESCUCHAR",17,Ui.WHITE,true);status.setGravity(Gravity.CENTER);
+        LinearLayout playerCard=Ui.card(this);
+        playerCard.setPadding(Ui.dp(this,14),Ui.dp(this,11),Ui.dp(this,14),Ui.dp(this,13));
+        Ui.add(col,playerCard,6);
+        status=Ui.text(this,"LISTA PARA ESCUCHAR",16,Ui.WHITE,true);
+        status.setGravity(Gravity.CENTER);
         Ui.add(playerCard,status,0);
         glowPlay=new GlowPlay(this,season.accent,season.second);
-        LinearLayout.LayoutParams playP=new LinearLayout.LayoutParams(Ui.dp(this,166),Ui.dp(this,166));
-        playP.gravity=Gravity.CENTER;playP.topMargin=Ui.dp(this,12);
+        int playSize=small?104:128;
+        LinearLayout.LayoutParams playP=new LinearLayout.LayoutParams(Ui.dp(this,playSize),Ui.dp(this,playSize));
+        playP.gravity=Gravity.CENTER;playP.topMargin=Ui.dp(this,5);
         playerCard.addView(glowPlay,playP);
-        glowPlay.setContentDescription("Reproducir la emisora");glowPlay.setOnClickListener(v->togglePlayback());
+        glowPlay.setContentDescription("Reproducir la emisora");
+        glowPlay.setOnClickListener(v->togglePlayback());
         playAction=Ui.action(this,"▶  ESCUCHAR EN VIVO",Ui.PINK,Ui.ORANGE,this::togglePlayback);
-        Ui.add(playerCard,playAction,10);
-        equalizer=new Equalizer(this);LinearLayout.LayoutParams eqp=new LinearLayout.LayoutParams(-1,Ui.dp(this,35));
-        eqp.topMargin=Ui.dp(this,14);playerCard.addView(equalizer,eqp);
-        TextView volHeading=Ui.text(this,"VOLUMEN DE LA RADIO",16,Ui.WHITE,true);
-        volHeading.setGravity(Gravity.CENTER);Ui.add(playerCard,volHeading,8);
+        playAction.setMinHeight(Ui.dp(this,50));
+        playAction.setPadding(Ui.dp(this,10),Ui.dp(this,10),Ui.dp(this,10),Ui.dp(this,10));
+        Ui.add(playerCard,playAction,3);
+        equalizer=new Equalizer(this);
+        LinearLayout.LayoutParams eqp=new LinearLayout.LayoutParams(-1,Ui.dp(this,small?16:23));
+        eqp.topMargin=Ui.dp(this,8);playerCard.addView(equalizer,eqp);
+
+        LinearLayout volHeader=Ui.row(this);Ui.add(playerCard,volHeader,6);
+        TextView volTitle=Ui.text(this,"VOLUMEN",14,Ui.WHITE,true);
+        volHeader.addView(volTitle,new LinearLayout.LayoutParams(0,-2,1));
+        volumeLabel=Ui.text(this,"50 %",15,Ui.GOLD,true);
+        volHeader.addView(volumeLabel,new LinearLayout.LayoutParams(-2,-2));
         LinearLayout volRow=Ui.row(this);Ui.add(playerCard,volRow,2);
-        TextView minus=volumeButton("−");volRow.addView(minus,new LinearLayout.LayoutParams(Ui.dp(this,54),Ui.dp(this,54)));
+        TextView minus=volumeButton("−");volRow.addView(minus,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
         volume=new SeekBar(this);volume.setMax(100);volume.setProgress(50);
+        volume.setContentDescription("Ajustar volumen de la emisora");
         volume.setProgressTintList(ColorStateList.valueOf(Ui.CYAN));
         volume.setThumbTintList(ColorStateList.valueOf(Ui.GOLD));
         volume.setProgressBackgroundTintList(ColorStateList.valueOf(0xff4b4764));
-        volRow.addView(volume,new LinearLayout.LayoutParams(0,Ui.dp(this,53),1));
-        TextView plus=volumeButton("+");volRow.addView(plus,new LinearLayout.LayoutParams(Ui.dp(this,54),Ui.dp(this,54)));
+        volRow.addView(volume,new LinearLayout.LayoutParams(0,Ui.dp(this,48),1));
+        TextView plus=volumeButton("+");volRow.addView(plus,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,48)));
         minus.setOnClickListener(v->adjustVolume(-10));plus.setOnClickListener(v->adjustVolume(10));
-        volumeLabel=Ui.text(this,"50 %",16,Ui.GOLD,true);volumeLabel.setGravity(Gravity.CENTER);
-        Ui.add(playerCard,volumeLabel,0);
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            @Override public void onProgressChanged(SeekBar b,int p,boolean user){
-                if(user)applyVolume(p);
-            }
+            @Override public void onProgressChanged(SeekBar b,int p,boolean user){if(user)applyVolume(p);}
             @Override public void onStartTrackingTouch(SeekBar b){changingVolume=true;}
             @Override public void onStopTrackingTouch(SeekBar b){changingVolume=false;refreshPlayback();}
         });
 
-        Ui.add(col,Ui.heading(this,"CONÉCTATE CON NOSOTROS"),25);
-        Ui.add(col,Ui.subtitle(this,"Todo a un toque. Sin menús complicados."),3);
-        LinearLayout actions1=Ui.row(this);Ui.add(col,actions1,15);
-        addActionTile(actions1,"✉","TU VOZ EN\nLA RADIO",Ui.CYAN,()->startActivity(new Intent(this,VozActivity.class)));
-        addActionTile(actions1,"♫","PIDE TU\nCANCIÓN",Ui.PINK,()->startActivity(new Intent(this,PideCancionActivity.class)));
-        LinearLayout actions2=Ui.row(this);Ui.add(col,actions2,10);
-        addActionTile(actions2,"☎","WHATSAPP",0xff35e6a0,()->openUrl("https://wa.me/573011835350"));
-        addActionTile(actions2,"↗","COMPARTIR",Ui.ORANGE,this::shareRadio);
-
-        LinearLayout themeCard=Ui.card(this);Ui.add(col,themeCard,18);
-        TextView t=Ui.text(this,"✦  TROPICALISIMA VIVA",19,Ui.GOLD,true);Ui.add(themeCard,t,0);
-        Ui.add(themeCard,Ui.text(this,"Ambientes que cambian con las fechas de Colombia, sin mover los botones ni cortar la música.",14,Ui.MUTE,false),6);
-        Switch automatic=new Switch(this);automatic.setText("Ambientes automáticos");
-        automatic.setTextColor(Ui.WHITE);automatic.setTextSize(16);
-        automatic.setChecked(ThemeManager.automatic(this));automatic.setMinHeight(Ui.dp(this,54));
-        automatic.setThumbTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{Ui.CYAN,Ui.MUTE}));
-        automatic.setOnCheckedChangeListener((b,checked)->{
-            ThemeManager.setAutomatic(this,checked);season=ThemeManager.current(this);buildScreen();refreshPlayback();
-        });
-        Ui.add(themeCard,automatic,10);
-        TextView web=Ui.text(this,"VISITA NUESTRA PÁGINA OFICIAL  ↗",15,Ui.CYAN,true);
-        web.setGravity(Gravity.CENTER);web.setPadding(8,Ui.dp(this,15),8,Ui.dp(this,15));
-        web.setOnClickListener(v->openUrl("https://tropicalisimaonline.vercel.app/"));
-        Ui.add(col,web,10);
-        TextView footer=Ui.subtitle(this,"TROPICALISIMA ESTÉREO  •  COLOMBIA\nLA QUE TE PONE A GOZAR");
-        Ui.add(col,footer,7);
+        // Un solo acceso protagonista. El FAB queda fuera del ScrollView:
+        // permanece visible sin multiplicar botones ni interrumpir la radio.
+        addParticipaButton();
     }
     private TextView volumeButton(String label){
         TextView b=Ui.text(this,label,32,Ui.WHITE,true);b.setGravity(Gravity.CENTER);
@@ -156,10 +161,76 @@ public final class MainActivity extends Activity {
         b.setContentDescription(label.equals("+")?"Subir volumen":"Bajar volumen");
         return b;
     }
-    private void addActionTile(LinearLayout row,String icon,String label,int accent,Runnable action){
-        TextView tile=Ui.nav(this,icon,label,accent,action);
-        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);
-        p.leftMargin=Ui.dp(this,4);p.rightMargin=Ui.dp(this,4);row.addView(tile,p);
+    /** Boton flotante unico: accesible, visible y separado del volumen. */
+    private void addParticipaButton(){
+        TextView fab=Ui.text(this,"✦  PARTICIPA",18,Ui.WHITE,true);
+        fab.setGravity(Gravity.CENTER);
+        fab.setPadding(Ui.dp(this,24),Ui.dp(this,14),Ui.dp(this,24),Ui.dp(this,14));
+        fab.setMinHeight(Ui.dp(this,60));
+        fab.setMinWidth(Ui.dp(this,174));
+        fab.setBackground(Ui.grad(this,Ui.PINK,Ui.ORANGE,26));
+        fab.setElevation(Ui.dp(this,9));
+        fab.setClickable(true);fab.setFocusable(true);
+        fab.setContentDescription("PARTICIPA. Abre saludos, peticiones de canciones y WhatsApp");
+        fab.setOnClickListener(v->showParticipaMenu());
+        FrameLayout.LayoutParams p=new FrameLayout.LayoutParams(-2,Ui.dp(this,60),Gravity.END|Gravity.BOTTOM);
+        p.setMargins(Ui.dp(this,12),0,Ui.dp(this,17),Ui.dp(this,15));
+        root.addView(fab,p);
+    }
+
+    /** Panel inferior Android nativo, facil de usar con dedos grandes. */
+    private void showParticipaMenu(){
+        Dialog dialog=new Dialog(this);
+        LinearLayout panel=Ui.column(this);
+        panel.setPadding(Ui.dp(this,19),Ui.dp(this,18),Ui.dp(this,19),Ui.dp(this,23));
+        panel.setBackground(Ui.solid(this,0xff11152f,26,Ui.PINK));
+        TextView head=Ui.text(this,"✦  PARTICIPA EN LA RADIO",22,Ui.GOLD,true);
+        head.setGravity(Gravity.CENTER);
+        Ui.add(panel,head,0);
+        TextView sub=Ui.text(this,"¡Tu música y tu voz hacen parte de TROPICALISIMA!",15,Ui.MUTE,false);
+        sub.setGravity(Gravity.CENTER);
+        Ui.add(panel,sub,7);
+        addParticipaOption(panel,"✉  DEJA TU SALUDO",Ui.CYAN,()->{
+            dialog.dismiss();startActivity(new Intent(this,VozActivity.class));
+        });
+        addParticipaOption(panel,"♫  PIDE TU CANCIÓN",Ui.PINK,()->{
+            dialog.dismiss();startActivity(new Intent(this,PideCancionActivity.class));
+        });
+        addParticipaOption(panel,"☎  WHATSAPP",0xff35e6a0,()->{
+            dialog.dismiss();openUrl("https://wa.me/573011835350");
+        });
+        TextView share=Ui.text(this,"↗  COMPARTIR LA EMISORA",15,Ui.CYAN,true);
+        share.setGravity(Gravity.CENTER);
+        share.setMinHeight(Ui.dp(this,50));
+        share.setClickable(true);share.setFocusable(true);
+        share.setOnClickListener(v->{dialog.dismiss();shareRadio();});
+        Ui.add(panel,share,8);
+        TextView close=Ui.text(this,"CERRAR  ×",15,Ui.MUTE,true);
+        close.setGravity(Gravity.CENTER);
+        close.setMinHeight(Ui.dp(this,48));
+        close.setClickable(true);close.setFocusable(true);
+        close.setOnClickListener(v->dialog.dismiss());
+        Ui.add(panel,close,2);
+        dialog.setContentView(panel);
+        dialog.show();
+        Window window=dialog.getWindow();
+        if(window!=null){
+            window.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            window.setDimAmount(.68f);
+            window.setGravity(Gravity.BOTTOM);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+    private void addParticipaOption(LinearLayout panel,String label,int color,Runnable action){
+        TextView option=Ui.text(this,label,18,Ui.WHITE,true);
+        option.setGravity(Gravity.CENTER_VERTICAL);
+        option.setPadding(Ui.dp(this,18),Ui.dp(this,10),Ui.dp(this,14),Ui.dp(this,10));
+        option.setMinHeight(Ui.dp(this,64));
+        option.setBackground(Ui.solid(this,0xff1c203e,17,color));
+        option.setClickable(true);option.setFocusable(true);
+        option.setOnClickListener(v->action.run());
+        Ui.add(panel,option,10);
     }
     private void togglePlayback(){
         if(controller==null){Toast.makeText(this,"Conectando el reproductor…",Toast.LENGTH_SHORT).show();return;}
@@ -195,29 +266,93 @@ public final class MainActivity extends Activity {
     }
     private void showIntro(){
         boolean first=!ThemeManager.prefs(this).getBoolean("intro_mostrada",false);
-        if(!ValueAnimator.areAnimatorsEnabled())return;
-        FrameLayout overlay=new FrameLayout(this);overlay.setBackground(Ui.grad(this,0xff09091c,0xff281039,0));
-        root.addView(overlay,new FrameLayout.LayoutParams(-1,-1));
-        LinearLayout panel=Ui.column(this);panel.setGravity(Gravity.CENTER);panel.setPadding(Ui.dp(this,20),0,Ui.dp(this,20),0);
+        // Accesibilidad Android: sin movimiento si el sistema tiene animaciones reducidas.
+        if(!ValueAnimator.areAnimatorsEnabled()){
+            ThemeManager.prefs(this).edit().putBoolean("intro_mostrada",true).apply();
+            return;
+        }
+        final FrameLayout activeRoot=root;
+        FrameLayout overlay=new FrameLayout(this);
+        overlay.setBackground(Ui.grad(this,0xff05091c,0xff220b35,0));
+        activeRoot.addView(overlay,new FrameLayout.LayoutParams(-1,-1));
+        IntroLights lights=new IntroLights(this,season.accent,season.second);
+        overlay.addView(lights,new FrameLayout.LayoutParams(-1,-1));
+        LinearLayout panel=Ui.column(this);
+        panel.setGravity(Gravity.CENTER);
+        panel.setPadding(Ui.dp(this,18),0,Ui.dp(this,18),0);
         overlay.addView(panel,new FrameLayout.LayoutParams(-1,-1));
-        TextView tagline=Ui.text(this,"◉  LA CABINA ESTÁ ENCENDIENDO",16,Ui.CYAN,true);tagline.setGravity(Gravity.CENTER);
-        Ui.add(panel,tagline,0);
-        ImageView image=new ImageView(this);image.setImageResource(R.drawable.logo_original);image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        LinearLayout.LayoutParams ilp=new LinearLayout.LayoutParams(-1,Ui.dp(this,315));ilp.topMargin=Ui.dp(this,12);panel.addView(image,ilp);
-        TextView txt=Ui.text(this,"¡LA QUE TE PONE A GOZAR!",30,Ui.GOLD,true);txt.setGravity(Gravity.CENTER);Ui.add(panel,txt,14);
-        TextView skip=Ui.text(this,"OMITIR INTRO  ›",16,Ui.WHITE,true);skip.setGravity(Gravity.CENTER);
-        skip.setPadding(0,Ui.dp(this,24),0,Ui.dp(this,24));Ui.add(panel,skip,15);
-        long delay=first?3250:680;
-        image.setAlpha(0f);image.setScaleX(.76f);image.setScaleY(.76f);
-        image.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(first?1250:430).start();
-        txt.setAlpha(0f);txt.animate().alpha(1f).setStartDelay(first?900:260).setDuration(first?950:300).start();
+        TextView tagline=Ui.text(this,"◉  ENCENDIENDO LA CABINA",15,Ui.CYAN,true);
+        tagline.setGravity(Gravity.CENTER);Ui.add(panel,tagline,0);
+        ImageView image=new ImageView(this);
+        image.setImageResource(R.drawable.logo_original);
+        image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        image.setContentDescription("Logotipo TROPICALISIMA ESTÉREO");
+        int screenDp=getResources().getConfiguration().screenHeightDp;
+        LinearLayout.LayoutParams ilp=new LinearLayout.LayoutParams(-1,Ui.dp(this,screenDp<650?220:280));
+        ilp.topMargin=Ui.dp(this,10);panel.addView(image,ilp);
+        TextView txt=Ui.text(this,"¡LA QUE TE PONE A GOZAR!",27,Ui.GOLD,true);
+        txt.setGravity(Gravity.CENTER);Ui.add(panel,txt,9);
+        TextView skip=Ui.text(this,"OMITIR INTRO  ›",16,Ui.WHITE,true);
+        skip.setGravity(Gravity.CENTER);
+        skip.setPadding(0,Ui.dp(this,20),0,Ui.dp(this,20));Ui.add(panel,skip,8);
+        image.setAlpha(0f);image.setScaleX(.63f);image.setScaleY(.63f);
+        image.setTranslationY(Ui.dp(this,44));
+        image.setRotation(-3f);
+        long full=first?2850:850;
+        ValueAnimator ignite=ValueAnimator.ofFloat(0f,1f);
+        ignite.setDuration(first?2100:610);
+        ignite.addUpdateListener(a->{lights.progress=(float)a.getAnimatedValue();lights.invalidate();});
+        ignite.start();
+        image.animate().alpha(1f).translationY(0f).scaleX(1.04f).scaleY(1.04f).rotation(0f)
+                .setStartDelay(first?230:40).setDuration(first?1030:430)
+                .withEndAction(()->image.animate().scaleX(1f).scaleY(1f).setDuration(210).start()).start();
+        tagline.setAlpha(0f);
+        tagline.animate().alpha(1f).setStartDelay(first?150:20).setDuration(360).start();
+        txt.setAlpha(0f);txt.setTranslationY(Ui.dp(this,18));
+        txt.animate().alpha(1f).translationY(0f).setStartDelay(first?1080:350)
+                .setDuration(first?680:220).start();
         final boolean[] done={false};
         Runnable exit=()->{
             if(done[0])return;done[0]=true;
             ThemeManager.prefs(this).edit().putBoolean("intro_mostrada",true).apply();
-            overlay.animate().alpha(0f).setDuration(320).withEndAction(()->root.removeView(overlay)).start();
+            ignite.cancel();
+            if(overlay.getParent()==activeRoot){
+                overlay.animate().alpha(0f).setDuration(220)
+                        .withEndAction(()->activeRoot.removeView(overlay)).start();
+            }
         };
-        skip.setOnClickListener(v->exit.run());handler.postDelayed(exit,delay);
+        skip.setOnClickListener(v->exit.run());
+        handler.postDelayed(exit,full);
+    }
+    // Efectos originales dibujados en Android, sin vídeos ni recursos externos:
+    // halo tropical, luces de cabina y destellos suaves; no hay flashes rápidos.
+    static class IntroLights extends View {
+        final Paint p=new Paint(3);final int accent,second;float progress=0f;
+        IntroLights(Activity c,int a,int b){super(c);accent=a;second=b;
+            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);}
+        @Override protected void onDraw(Canvas c){
+            super.onDraw(c);float w=getWidth(),h=getHeight(),cx=w*.5f,cy=h*.46f;
+            float rise=Math.min(1f,progress*1.5f);
+            p.setShader(new RadialGradient(cx,cy,Math.max(w,h)*.56f,
+                    new int[]{(accent&0x00ffffff)|((int)(rise*70)<<24),0x41221a55,0x0007071b},
+                    null,Shader.TileMode.CLAMP));
+            c.drawRect(0,0,w,h,p);p.setShader(null);
+            for(int j=0;j<3;j++){
+                float r=w*(.25f+.12f*j)+w*.06f*progress;
+                p.setColor(((int)(65*rise)&0xff)<<24 | ((j==0?accent:j==1?second:Ui.PINK)&0x00ffffff));
+                p.setStrokeWidth(Ui.dp(getContext(),j==0?2:1));p.setStyle(Paint.Style.STROKE);
+                c.drawCircle(cx,cy,r,p);
+            }
+            p.setStyle(Paint.Style.FILL);
+            for(int j=0;j<18;j++){
+                float ang=(float)(Math.PI*2*j/18);
+                float x=cx+(float)Math.cos(ang)*w*.39f,y=cy+(float)Math.sin(ang)*h*.28f;
+                int color=j%3==0?Ui.ORANGE:j%2==0?Ui.PINK:Ui.CYAN;
+                p.setColor((((int)(115*rise))&0xff)<<24 | (color&0x00ffffff));
+                float r=Ui.dp(getContext(),1.3f)+(j%3)*.8f;
+                c.drawCircle(x,y,r,p);
+            }
+        }
     }
     static class GlowPlay extends View {
         private final Paint p=new Paint(3);private final int a,b;private boolean playing;

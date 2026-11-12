@@ -5,25 +5,24 @@
   "zona_horaria": "America/Bogota",
   "repeticion": "anual_automatica",
   "tema_fijo_por_defecto": "NEON_TROPICAL_PREMIUM",
-  "modo_inicial": "automatico",
-  "modo_alternativo": "clasico",
+  "modo_inicial": "automatico_obligatorio_por_calendario",
+  "modo_alternativo": null,
   "preferencias": {
     "respetar_reducir_movimiento": true,
     "animaciones_opcionales": true,
     "intro_max_segundos": 3.5,
     "cambio_sin_reiniciar_audio": true,
     "sin_sonidos_por_cambio_de_tema": true,
-    "recursos_descargados_en_apk": true,
-    "guardar_preferencia_del_usuario": true
+    "recursos_descargados_en_apk": true
   },
   "normas_seguridad_diseno": [
     "No cambiar el logotipo original: solo decoracion exterior.",
     "No mover controles ni cambiar su significado o posicion.",
     "Textos legibles y contraste accesible, controles tactiles de al menos 48dp.",
     "Nunca interrumpir la radio ni agregar sonido automatico por eventos.",
-    "Las decoraciones pueden desactivarse y siempre existe el tema clasico.",
     "No descargar recursos externos ni necesitar permisos de ubicacion para decidir un tema.",
-    "En ausencia de fechas especiales aplicar el ambiente del mes."
+    "En ausencia de fechas especiales aplicar el ambiente del mes.",
+    "Los ambientes son parte de la identidad de la emisora: no existe opción para apagarlos."
   ],
   "prioridad": [
     "eventos de fecha (valor mayor primero)",

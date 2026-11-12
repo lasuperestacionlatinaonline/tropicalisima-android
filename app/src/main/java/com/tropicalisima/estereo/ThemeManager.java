@@ -18,12 +18,9 @@ final class ThemeManager {
         Season(String id,String name,String phrase,int accent,int second){this.id=id;this.name=name;this.phrase=phrase;this.accent=accent;this.second=second;}
     }
     static SharedPreferences prefs(Context c){return c.getSharedPreferences("tropicalisima",Context.MODE_PRIVATE);}
-    static boolean automatic(Context c){return prefs(c).getBoolean("auto_ambientes",true);}
-    static void setAutomatic(Context c,boolean b){prefs(c).edit().putBoolean("auto_ambientes",b).apply();}
     static LocalDate colombia(){return LocalDate.now(ZoneId.of("America/Bogota"));}
     static Season current(Context c){return resolve(c,colombia());}
     static Season resolve(Context c, LocalDate d){
-        if(!automatic(c))return new Season("clasico","NEÓN TROPICAL CLÁSICO","LA QUE TE PONE A GOZAR",Ui.CYAN,Ui.PINK);
         try(InputStream in=c.getAssets().open("calendario_tropicalisima_app_v1.json")){
             ByteArrayOutputStream buf=new ByteArrayOutputStream();byte[] b=new byte[4096];int n;
             while((n=in.read(b))!=-1)buf.write(b,0,n);
