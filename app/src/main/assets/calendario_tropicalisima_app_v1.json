@@ -1,0 +1,480 @@
+{
+  "nombre": "TROPICALISIMA ESTÉREO — Calendario de Ambientes",
+  "version": "1.0.0",
+  "estado": "especificacion_previa_a_integracion",
+  "zona_horaria": "America/Bogota",
+  "repeticion": "anual_automatica",
+  "tema_fijo_por_defecto": "NEON_TROPICAL_PREMIUM",
+  "modo_inicial": "automatico",
+  "modo_alternativo": "clasico",
+  "preferencias": {
+    "respetar_reducir_movimiento": true,
+    "animaciones_opcionales": true,
+    "intro_max_segundos": 3.5,
+    "cambio_sin_reiniciar_audio": true,
+    "sin_sonidos_por_cambio_de_tema": true,
+    "recursos_descargados_en_apk": true,
+    "guardar_preferencia_del_usuario": true
+  },
+  "normas_seguridad_diseno": [
+    "No cambiar el logotipo original: solo decoracion exterior.",
+    "No mover controles ni cambiar su significado o posicion.",
+    "Textos legibles y contraste accesible, controles tactiles de al menos 48dp.",
+    "Nunca interrumpir la radio ni agregar sonido automatico por eventos.",
+    "Las decoraciones pueden desactivarse y siempre existe el tema clasico.",
+    "No descargar recursos externos ni necesitar permisos de ubicacion para decidir un tema.",
+    "En ausencia de fechas especiales aplicar el ambiente del mes."
+  ],
+  "prioridad": [
+    "eventos de fecha (valor mayor primero)",
+    "si empate mayor especificidad temporal",
+    "tema mensual",
+    "tema clasico"
+  ],
+  "temas_mensuales": [
+    {
+      "mes": 1,
+      "nombre": "ENERO",
+      "tema": "Renacer Tropical",
+      "paleta": "Azul noche, turquesa y oro",
+      "decoracion": "Destellos de amanecer y confeti muy discreto",
+      "frase": "Año nuevo, nuevos ritmos"
+    },
+    {
+      "mes": 2,
+      "nombre": "FEBRERO",
+      "tema": "Carnaval de Color",
+      "paleta": "Fucsia, naranja y cian",
+      "decoracion": "Cintas de luz y ondas festivas",
+      "frase": "Febrero para gozar"
+    },
+    {
+      "mes": 3,
+      "nombre": "MARZO",
+      "tema": "Brisa Tropical",
+      "paleta": "Verde esmeralda, cian y violeta",
+      "decoracion": "Hojas iluminadas y brisa suave",
+      "frase": "La alegría sigue sonando"
+    },
+    {
+      "mes": 4,
+      "nombre": "ABRIL",
+      "tema": "Primavera de Ritmos",
+      "paleta": "Turquesa, coral y amarillo",
+      "decoracion": "Partículas florales sutiles",
+      "frase": "Que florezca la música"
+    },
+    {
+      "mes": 5,
+      "nombre": "MAYO",
+      "tema": "Corazones de Música",
+      "paleta": "Fucsia suave, coral y oro",
+      "decoracion": "Corazones discretos y luz cálida",
+      "frase": "Música para compartir"
+    },
+    {
+      "mes": 6,
+      "nombre": "JUNIO",
+      "tema": "Sol y Alegría",
+      "paleta": "Ámbar, turquesa y azul noche",
+      "decoracion": "Rayos suaves y pequeñas ondas",
+      "frase": "Sonidos que nos unen"
+    },
+    {
+      "mes": 7,
+      "nombre": "JULIO",
+      "tema": "Colombia Viva",
+      "paleta": "Amarillo, azul y rojo sobre fondo oscuro",
+      "decoracion": "Cintas de luz tricolor",
+      "frase": "El ritmo de nuestra tierra"
+    },
+    {
+      "mes": 8,
+      "nombre": "AGOSTO",
+      "tema": "Ritmo Dorado",
+      "paleta": "Oro, azul eléctrico y magenta",
+      "decoracion": "Destellos cálidos y ondas musicales",
+      "frase": "Colombia suena"
+    },
+    {
+      "mes": 9,
+      "nombre": "SEPTIEMBRE",
+      "tema": "Amor y Amistad Tropical",
+      "paleta": "Rosa neón, violeta y cian",
+      "decoracion": "Corazones de luz muy sutiles",
+      "frase": "Comparte la alegría"
+    },
+    {
+      "mes": 10,
+      "nombre": "OCTUBRE",
+      "tema": "Noche de Ritmos",
+      "paleta": "Violeta, naranja y fucsia",
+      "decoracion": "Estrellas y luces misteriosas discretas",
+      "frase": "La noche se llena de música"
+    },
+    {
+      "mes": 11,
+      "nombre": "NOVIEMBRE",
+      "tema": "Constelación Tropical",
+      "paleta": "Cian, índigo y oro",
+      "decoracion": "Estrellas y ondas de luz",
+      "frase": "Siempre contigo"
+    },
+    {
+      "mes": 12,
+      "nombre": "DICIEMBRE",
+      "tema": "Navidad Tropical",
+      "paleta": "Rojo cálido, verde esmeralda y oro",
+      "decoracion": "Guirnaldas y luces navideñas livianas",
+      "frase": "La Navidad te pone a gozar"
+    }
+  ],
+  "eventos_especiales": [
+    {
+      "id": "ano_nuevo",
+      "nombre": "Año Nuevo",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 1,
+        "dia": 1
+      },
+      "duracion": 1,
+      "tema": "Fiesta de luces",
+      "prioridad": 110,
+      "decoracion": "Destellos dorados y un breve saludo de año nuevo"
+    },
+    {
+      "id": "reyes",
+      "nombre": "Día de Reyes",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 1,
+        "dia": 6
+      },
+      "duracion": 1,
+      "tema": "Estrellas tropicales",
+      "prioridad": 75,
+      "decoracion": "Estrellas doradas discretas"
+    },
+    {
+      "id": "san_valentin",
+      "nombre": "San Valentín",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 2,
+        "dia": 14
+      },
+      "duracion": 1,
+      "tema": "Corazones neón",
+      "prioridad": 75,
+      "decoracion": "Corazones de luz sutiles, sin bloquear controles"
+    },
+    {
+      "id": "carnaval",
+      "nombre": "Carnaval de Barranquilla",
+      "regla": {
+        "tipo": "rango_relativo_pascua",
+        "desde_dias": -50,
+        "hasta_dias": -47
+      },
+      "duracion": 4,
+      "tema": "Carnaval Tropical",
+      "prioridad": 100,
+      "decoracion": "Confeti ligero, cintas y paleta muy viva",
+      "nota": "Se calcula para cada año a partir de Pascua; no se fijan días de febrero."
+    },
+    {
+      "id": "mujer",
+      "nombre": "Día Internacional de la Mujer",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 3,
+        "dia": 8
+      },
+      "duracion": 1,
+      "tema": "Luz y reconocimiento",
+      "prioridad": 85,
+      "decoracion": "Flores luminosas discretas y mensaje de reconocimiento"
+    },
+    {
+      "id": "semana_santa",
+      "nombre": "Semana Santa",
+      "regla": {
+        "tipo": "rango_relativo_pascua",
+        "desde_dias": -7,
+        "hasta_dias": 0
+      },
+      "duracion": 8,
+      "tema": "Serenidad Tropical",
+      "prioridad": 90,
+      "decoracion": "Luz suave y menos partículas; sin modificar la programación musical",
+      "nota": "Tratamiento respetuoso y sin símbolos religiosos obligatorios."
+    },
+    {
+      "id": "tierra",
+      "nombre": "Día de la Tierra",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 4,
+        "dia": 22
+      },
+      "duracion": 1,
+      "tema": "Tropical Verde",
+      "prioridad": 80,
+      "decoracion": "Hojas y luz verde esmeralda"
+    },
+    {
+      "id": "ninez",
+      "nombre": "Día de la Niñez en Colombia",
+      "regla": {
+        "tipo": "ultimo_dia_semana",
+        "mes": 4,
+        "dia_semana": "sabado"
+      },
+      "duracion": 1,
+      "tema": "Fiesta Familiar",
+      "prioridad": 80,
+      "decoracion": "Estrellas y figuras de colores sutiles"
+    },
+    {
+      "id": "trabajo",
+      "nombre": "Día del Trabajo",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 5,
+        "dia": 1
+      },
+      "duracion": 1,
+      "tema": "Homenaje al esfuerzo",
+      "prioridad": 75,
+      "decoracion": "Oro y luces cálidas"
+    },
+    {
+      "id": "madres",
+      "nombre": "Día de la Madre",
+      "regla": {
+        "tipo": "n_esimo_dia_semana",
+        "mes": 5,
+        "dia_semana": "domingo",
+        "n": 2
+      },
+      "duracion": 1,
+      "tema": "Madres Tropicales",
+      "prioridad": 95,
+      "decoracion": "Flores y corazones delicados",
+      "nota": "Regla tradicional en Colombia; excepciones oficiales futuras pueden requerir validación."
+    },
+    {
+      "id": "maestros",
+      "nombre": "Día del Maestro",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 5,
+        "dia": 15
+      },
+      "duracion": 1,
+      "tema": "Luz de gratitud",
+      "prioridad": 75,
+      "decoracion": "Estrellas doradas y agradecimiento"
+    },
+    {
+      "id": "padres",
+      "nombre": "Día del Padre",
+      "regla": {
+        "tipo": "n_esimo_dia_semana",
+        "mes": 6,
+        "dia_semana": "domingo",
+        "n": 3
+      },
+      "duracion": 1,
+      "tema": "Padres Tropicales",
+      "prioridad": 95,
+      "decoracion": "Ondas y brillo dorado",
+      "nota": "Regla tradicional; cambios excepcionales de celebración pueden requerir validación."
+    },
+    {
+      "id": "independencia",
+      "nombre": "Independencia de Colombia",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 7,
+        "dia": 20
+      },
+      "duracion": 1,
+      "tema": "Colombia Viva",
+      "prioridad": 100,
+      "decoracion": "Destellos tricolor sobre la identidad visual original"
+    },
+    {
+      "id": "boyaca",
+      "nombre": "Batalla de Boyacá",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 8,
+        "dia": 7
+      },
+      "duracion": 1,
+      "tema": "Orgullo Colombiano",
+      "prioridad": 90,
+      "decoracion": "Cintas tricolor sutiles"
+    },
+    {
+      "id": "amor_amistad",
+      "nombre": "Día de Amor y Amistad",
+      "regla": {
+        "tipo": "n_esimo_dia_semana",
+        "mes": 9,
+        "dia_semana": "sabado",
+        "n": 3
+      },
+      "duracion": 1,
+      "tema": "Amor y Amistad",
+      "prioridad": 100,
+      "decoracion": "Corazones luminosos y ondas rosadas"
+    },
+    {
+      "id": "diversidad",
+      "nombre": "Encuentro de Culturas",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 10,
+        "dia": 12
+      },
+      "duracion": 1,
+      "tema": "Riqueza Cultural",
+      "prioridad": 80,
+      "decoracion": "Patrones festivos abstractos y multicolores"
+    },
+    {
+      "id": "halloween",
+      "nombre": "Halloween",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 10,
+        "dia": 31
+      },
+      "duracion": 1,
+      "tema": "Noche Neón",
+      "prioridad": 100,
+      "decoracion": "Calabazas y estrellas muy discretas"
+    },
+    {
+      "id": "cartagena",
+      "nombre": "Independencia de Cartagena",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 11,
+        "dia": 11
+      },
+      "duracion": 1,
+      "tema": "Raíces Colombianas",
+      "prioridad": 85,
+      "decoracion": "Oro, turquesa y motivos geométricos"
+    },
+    {
+      "id": "velitas",
+      "nombre": "Noche de las Velitas",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 12,
+        "dia": 7
+      },
+      "duracion": 1,
+      "tema": "Luces y Velitas",
+      "prioridad": 110,
+      "decoracion": "Faroles y pequeñas velas de luz no animadas en exceso"
+    },
+    {
+      "id": "novena",
+      "nombre": "Temporada de Novenas",
+      "regla": {
+        "tipo": "rango_anual",
+        "desde": {
+          "mes": 12,
+          "dia": 16
+        },
+        "hasta": {
+          "mes": 12,
+          "dia": 23
+        }
+      },
+      "duracion": 8,
+      "tema": "Encuentro Navideño",
+      "prioridad": 85,
+      "decoracion": "Guirnaldas y luces cálidas"
+    },
+    {
+      "id": "nochebuena",
+      "nombre": "Nochebuena",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 12,
+        "dia": 24
+      },
+      "duracion": 1,
+      "tema": "Nochebuena Tropical",
+      "prioridad": 110,
+      "decoracion": "Estrellas doradas y destello breve"
+    },
+    {
+      "id": "navidad",
+      "nombre": "Navidad",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 12,
+        "dia": 25
+      },
+      "duracion": 1,
+      "tema": "Navidad Tropical",
+      "prioridad": 110,
+      "decoracion": "Luces doradas y efecto festivo liviano"
+    },
+    {
+      "id": "feria_cali",
+      "nombre": "Feria de Cali",
+      "regla": {
+        "tipo": "rango_anual",
+        "desde": {
+          "mes": 12,
+          "dia": 26
+        },
+        "hasta": {
+          "mes": 12,
+          "dia": 30
+        }
+      },
+      "duracion": 5,
+      "tema": "Salsa y Feria",
+      "prioridad": 100,
+      "decoracion": "Ondas rítmicas y luces de feria",
+      "nota": "Regla artística anual 26–30 diciembre para evitar solaparse con Navidad el 25; verificar fechas oficiales si cambian."
+    },
+    {
+      "id": "inocentes",
+      "nombre": "Día de los Inocentes",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 12,
+        "dia": 28
+      },
+      "duracion": 1,
+      "tema": "Guiño Tropical",
+      "prioridad": 105,
+      "decoracion": "Estrellas juguetonas sin bromas engañosas"
+    },
+    {
+      "id": "fin_ano",
+      "nombre": "Fin de Año",
+      "regla": {
+        "tipo": "fecha_fija",
+        "mes": 12,
+        "dia": 31
+      },
+      "duracion": 1,
+      "tema": "Cuenta Regresiva Tropical",
+      "prioridad": 120,
+      "decoracion": "Destellos dorados y confeti ligerísimo"
+    }
+  ],
+  "advertencia": "Las celebraciones de fecha móvil se calculan; cambios excepcionales anunciados por terceros no son predecibles para todos los años."
+}

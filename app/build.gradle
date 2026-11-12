@@ -1,0 +1,35 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.tropicalisima.estereo'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.tropicalisima.estereo'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0-beta1'
+    }
+    buildTypes {
+        debug { applicationIdSuffix '.debug' }
+        release {
+            minifyEnabled false
+            // Antes del lanzamiento público agregar firma privada (NO subir keystore al repo).
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildFeatures { buildConfig true }
+}
+
+dependencies {
+    def media3 = '1.11.1'
+    implementation "androidx.media3:media3-exoplayer:$media3"
+    implementation "androidx.media3:media3-session:$media3"
+    implementation 'com.google.guava:guava:33.4.8-android'
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
