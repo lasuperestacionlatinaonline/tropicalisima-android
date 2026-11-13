@@ -56,6 +56,7 @@ public final class MainActivity extends Activity {
     };
     private boolean changingVolume=false;
     private boolean shuttingDown=false;
+    private final UpdateManager updates = new UpdateManager();
     private final Runnable checkTheme=new Runnable(){@Override public void run(){
         ThemeManager.Season updated=ThemeManager.current(MainActivity.this);
         if(season!=null&&!season.id.equals(updated.id)){
@@ -65,15 +66,15 @@ public final class MainActivity extends Activity {
     }};
 
     @Override public void onCreate(Bundle b){super.onCreate(b);season=ThemeManager.current(this);buildScreen();showIntro();}
-    @Override protected void onResume(){super.onResume();handler.removeCallbacks(checkTheme);handler.post(checkTheme);refreshPlayback();}
-    @Override protected void onPause(){handler.removeCallbacks(checkTheme);super.onPause();}
+    @Override protected void onResume(){super.onResume();handler.removeCallbacks(checkTheme);handler.post(checkTheme);refreshPlayback();updates.onResume(this);}
+    @Override protected void onPause(){updates.onPause();handler.removeCallbacks(checkTheme);super.onPause();}
     @Override protected void onStart(){super.onStart();connectPlayer();}
     @Override protected void onStop(){
         if(controller!=null){controller.removeListener(listener);controller=null;}
         if(controllerFuture!=null){MediaController.releaseFuture(controllerFuture);controllerFuture=null;}
         super.onStop();
     }
-    @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);super.onDestroy();}
+    @Override protected void onDestroy(){updates.onDestroy();handler.removeCallbacksAndMessages(null);super.onDestroy();}
 
     private void connectPlayer(){
         SessionToken token=new SessionToken(this,new ComponentName(this,RadioPlaybackService.class));
