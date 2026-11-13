@@ -55,6 +55,7 @@ public final class MainActivity extends Activity {
         }
     };
     private boolean changingVolume=false;
+    private boolean shuttingDown=false;
     private final Runnable checkTheme=new Runnable(){@Override public void run(){
         ThemeManager.Season updated=ThemeManager.current(MainActivity.this);
         if(season!=null&&!season.id.equals(updated.id)){
@@ -167,6 +168,16 @@ public final class MainActivity extends Activity {
             @Override public void onStopTrackingTouch(SeekBar b){changingVolume=false;refreshPlayback();}
         });
 
+        // Acceso claro para cerrar TODA la radio. No sustituye el botón STOP.
+        TextView power=Ui.text(this,"⏻  APAGAR RADIO",16,Ui.WHITE,true);
+        power.setGravity(Gravity.CENTER);
+        power.setMinHeight(Ui.dp(this,52));
+        power.setContentDescription("Apagar radio completamente y salir de la aplicación");
+        power.setBackground(Ui.solid(this,0xff292039,17,Ui.PINK));
+        power.setClickable(true);power.setFocusable(true);
+        power.setOnClickListener(v->shutdownWithOutro());
+        Ui.add(playerCard,power,small?5:10);
+
         // Un acceso flotante independiente: SALUDO, CANCIÓN, WHATSAPP y COMPARTIR.
         addParticipaButton();
     }
@@ -248,10 +259,73 @@ public final class MainActivity extends Activity {
         Ui.add(panel,option,10);
     }
     private void togglePlayback(){
-        if(controller==null){Toast.makeText(this,"Conectando el reproductor…",Toast.LENGTH_SHORT).show();return;}
-        if(controller.getPlayWhenReady()){controller.pause();}
-        else {if(controller.getPlaybackState()==Player.STATE_IDLE||controller.getPlaybackState()==Player.STATE_ENDED)controller.prepare();controller.play();}
-        refreshPlayback();
+        if(shuttingDown)return;
+        if(controller==null){
+            Toast.makeText(this,"Preparando el reproductor…",Toast.LENGTH_SHORT).show();return;
+        }
+        // PLAY/STOP de radio en vivo: jamás PAUSE ni reproducción desde una cola vieja.
+        sendRadioCommand(controller.getPlayWhenReady()
+                ? RadioPlaybackService.ACTION_STOP_LIVE
+                : RadioPlaybackService.ACTION_PLAY_FRESH);
+    }
+    private void sendRadioCommand(String action){
+        Intent command=new Intent(this,RadioPlaybackService.class).setAction(action);
+        try{startService(command);}
+        catch(Exception e){
+            // No permitir que una falla de comandos deje la emisora sonando al salir.
+            if(RadioPlaybackService.ACTION_SHUTDOWN.equals(action)){
+                if(controller!=null){controller.pause();controller.stop();controller.clearMediaItems();}
+                stopService(new Intent(this,RadioPlaybackService.class));
+            }else{
+                Toast.makeText(this,"No se pudo comunicar con la radio.",Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+    /** Salida explícita: corta el audio ahora; la outro solo es visual. */
+    private void shutdownWithOutro(){
+        if(shuttingDown)return;
+        shuttingDown=true;
+        sendRadioCommand(RadioPlaybackService.ACTION_SHUTDOWN);
+        handler.removeCallbacks(checkTheme);
+        if(!ValueAnimator.areAnimatorsEnabled()){finishAndRemoveTask();return;}
+
+        final FrameLayout background=root;
+        FrameLayout overlay=new FrameLayout(this);
+        overlay.setBackground(Ui.grad(this,0xff05091c,0xff290d39,0));
+        background.addView(overlay,new FrameLayout.LayoutParams(-1,-1));
+        IntroLights lights=new IntroLights(this,season.accent,season.second);
+        overlay.addView(lights,new FrameLayout.LayoutParams(-1,-1));
+        LinearLayout panel=Ui.column(this);
+        panel.setGravity(Gravity.CENTER);
+        panel.setPadding(Ui.dp(this,20),0,Ui.dp(this,20),0);
+        overlay.addView(panel,new FrameLayout.LayoutParams(-1,-1));
+        ImageView mark=new ImageView(this);
+        mark.setImageResource(R.drawable.logo_original);
+        mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        mark.setContentDescription("TROPICALISIMA ESTÉREO");
+        int h=getResources().getConfiguration().screenHeightDp;
+        LinearLayout.LayoutParams pic=new LinearLayout.LayoutParams(-1,Ui.dp(this,h<650?200:270));
+        panel.addView(mark,pic);
+        TextView title=Ui.text(this,"¡GRACIAS POR GOZAR\nCON NOSOTROS!",29,Ui.GOLD,true);
+        title.setGravity(Gravity.CENTER);Ui.add(panel,title,16);
+        TextView goodbye=Ui.text(this,"HASTA LA PRÓXIMA GOZADERA",17,Ui.CYAN,true);
+        goodbye.setGravity(Gravity.CENTER);Ui.add(panel,goodbye,12);
+        mark.setAlpha(0f);mark.setScaleX(.82f);mark.setScaleY(.82f);
+        mark.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(550).start();
+        title.setAlpha(0f);title.animate().alpha(1f).setStartDelay(250).setDuration(550).start();
+        goodbye.setAlpha(0f);goodbye.animate().alpha(1f).setStartDelay(700).setDuration(550).start();
+        ValueAnimator anim=ValueAnimator.ofFloat(0f,1f);
+        anim.setDuration(1500);
+        anim.addUpdateListener(a->{lights.progress=(float)a.getAnimatedValue();lights.invalidate();});
+        anim.start();
+        handler.postDelayed(()->{
+            anim.cancel();
+            finishAndRemoveTask();
+        },2100L);
+    }
+    @Override public void onBackPressed(){
+        // Volver desde otras secciones sigue funcionando; atrás desde Inicio apaga.
+        shutdownWithOutro();
     }
     private void adjustVolume(int delta){int now=controller!=null?Math.round(controller.getVolume()*100):volume.getProgress();applyVolume(Math.max(0,Math.min(100,now+delta)));}
     private void applyVolume(int percent){
@@ -264,12 +338,12 @@ public final class MainActivity extends Activity {
         boolean ready=controller!=null,shouldPlay=ready&&controller.getPlayWhenReady();
         boolean playing=ready&&controller.isPlaying();
         boolean buffering=shouldPlay&&!playing;
-        status.setText(ready?(playing?"●  REPRODUCIENDO EN VIVO":buffering?"◌  CONECTANDO LA SEÑAL…":"●  EN VIVO · TOCA PLAY"):
+        status.setText(ready?(playing?"●  REPRODUCIENDO EN VIVO":buffering?"◌  CONECTANDO / RECONECTANDO…":"●  EN VIVO · TOCA PLAY"):
                 "PREPARANDO REPRODUCTOR…");
         status.setTextColor(playing?Ui.CYAN:Ui.WHITE);
         glowPlay.setPlaying(shouldPlay);equalizer.setPlaying(playing);
         if(logoAura!=null)logoAura.setPlaying(playing);
-        glowPlay.setContentDescription(shouldPlay?"Pausar la radio":"Escuchar la radio en vivo");
+        glowPlay.setContentDescription(shouldPlay?"Detener la transmisión y limpiar el búfer":"Conectarse a la transmisión en vivo");
         if(ready&&!changingVolume){int v=Math.round(controller.getVolume()*100);volume.setProgress(v);volumeLabel.setText(v+" %");}
     }
     private void openUrl(String link){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(link)));}
@@ -423,8 +497,10 @@ public final class MainActivity extends Activity {
             c.drawCircle(cx,cy,r,p);p.setShader(null);p.setStyle(Paint.Style.FILL);
             p.setColor(0xff11152f);c.drawCircle(cx,cy,r-s*.044f,p);
             p.setColor(Ui.WHITE);
-            if(playing){float bw=s*.075f,hh=s*.16f;c.drawRoundRect(cx-bw*1.6f,cy-hh,cx-bw*.55f,cy+hh,bw*.25f,bw*.25f,p);
-                c.drawRoundRect(cx+bw*.55f,cy-hh,cx+bw*1.6f,cy+hh,bw*.25f,bw*.25f,p);
+            if(playing){
+                float side=s*.29f;
+                c.drawRoundRect(cx-side/2,cy-side/2,cx+side/2,cy+side/2,
+                        s*.028f,s*.028f,p); // STOP cuadrado, nunca PAUSA.
             }else{Path path=new Path();path.moveTo(cx-s*.09f,cy-s*.17f);path.lineTo(cx+s*.19f,cy);
                 path.lineTo(cx-s*.09f,cy+s*.17f);path.close();c.drawPath(path,p);}
         }
